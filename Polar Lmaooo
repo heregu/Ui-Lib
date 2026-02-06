@@ -1,0 +1,188 @@
+-- UILib (Full)
+
+local UIS = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+
+local UILib = {}
+
+UILib.Theme = {
+	Background = Color3.fromRGB(26,26,26),
+	Section = Color3.fromRGB(46,46,46),
+	Accent = Color3.fromRGB(90,140,255),
+	Text = Color3.fromRGB(255,255,255),
+	Stroke = Color3.fromRGB(70,70,70)
+}
+
+-- WINDOW
+function UILib:CreateWindow(title, parent)
+	local gui = Instance.new("ScreenGui", parent)
+	gui.Name = "UILib"
+
+	local main = Instance.new("Frame", gui)
+	main.Size = UDim2.new(0,180,0,240)
+	main.Position = UDim2.new(0.25,0,0.05,0)
+	main.BackgroundColor3 = self.Theme.Background
+	main.BorderSizePixel = 0
+
+	Instance.new("UICorner", main).CornerRadius = UDim.new(0,6)
+	Instance.new("UIStroke", main).Color = self.Theme.Stroke
+
+	local top = Instance.new("TextLabel", main)
+	top.Size = UDim2.new(1,0,0,32)
+	top.Text = title
+	top.TextSize = 18
+	top.TextColor3 = self.Theme.Text
+	top.BackgroundTransparency = 1
+
+	-- Drag
+	local dragging, dragStart, startPos
+	top.InputBegan:Connect(function(i)
+		if i.UserInputType == Enum.UserInputType.MouseButton1 then
+			dragging = true
+			dragStart = i.Position
+			startPos = main.Position
+		end
+	end)
+
+	UIS.InputChanged:Connect(function(i)
+		if dragging and i.UserInputType == Enum.UserInputType.MouseMovement then
+			local delta = i.Position - dragStart
+			main.Position = UDim2.new(
+				startPos.X.Scale,
+				startPos.X.Offset + delta.X,
+				startPos.Y.Scale,
+				startPos.Y.Offset + delta.Y
+			)
+		end
+	end)
+
+	UIS.InputEnded:Connect(function(i)
+		if i.UserInputType == Enum.UserInputType.MouseButton1 then
+			dragging = false
+		end
+	end)
+
+	return main
+end
+
+-- SCROLL
+function UILib:CreateScroll(parent)
+	local scroll = Instance.new("ScrollingFrame", parent)
+	scroll.Size = UDim2.new(1,0,1,-36)
+	scroll.Position = UDim2.new(0,0,0,36)
+	scroll.CanvasSize = UDim2.new(0,0,0,0)
+	scroll.ScrollBarImageTransparency = 1
+	scroll.BorderSizePixel = 0
+
+	local layout = Instance.new("UIListLayout", scroll)
+	layout.Padding = UDim.new(0,6)
+
+	local padding = Instance.new("UIPadding", scroll)
+	padding.PaddingLeft = UDim.new(0,6)
+	padding.PaddingRight = UDim.new(0,6)
+	padding.PaddingTop = UDim.new(0,6)
+
+	layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+		scroll.CanvasSize = UDim2.new(0,0,0,layout.AbsoluteContentSize.Y + 8)
+	end)
+
+	return scroll
+end
+
+-- TOGGLE
+function UILib:AddToggle(parent, text, default, callback)
+	local holder = Instance.new("Frame", parent)
+	holder.Size = UDim2.new(1,0,0,30)
+	holder.BackgroundColor3 = self.Theme.Section
+	holder.BorderSizePixel = 0
+	Instance.new("UICorner", holder).CornerRadius = UDim.new(0,5)
+
+	local label = Instance.new("TextLabel", holder)
+	label.Text = text
+	label.Size = UDim2.new(1,-40,1,0)
+	label.TextXAlignment = Enum.TextXAlignment.Left
+	label.TextColor3 = self.Theme.Text
+	label.BackgroundTransparency = 1
+
+	local toggle = Instance.new("Frame", holder)
+	toggle.Size = UDim2.new(0,30,0,16)
+	toggle.Position = UDim2.new(1,-34,0.5,-8)
+	toggle.BackgroundColor3 = Color3.fromRGB(90,90,90)
+	Instance.new("UICorner", toggle).CornerRadius = UDim.new(1,0)
+
+	local dot = Instance.new("Frame", toggle)
+	dot.Size = UDim2.new(0,14,0,14)
+	dot.Position = UDim2.new(0,1,0.5,-7)
+	dot.BackgroundColor3 = Color3.fromRGB(255,255,255)
+	Instance.new("UICorner", dot).CornerRadius = UDim.new(1,0)
+
+	local state = default
+
+	local function set(v)
+		state = v
+		TweenService:Create(dot, TweenInfo.new(0.2), {
+			Position = v and UDim2.new(1,-15,0.5,-7) or UDim2.new(0,1,0.5,-7)
+		}):Play()
+		toggle.BackgroundColor3 = v and UILib.Theme.Accent or Color3.fromRGB(90,90,90)
+		callback(v)
+	end
+
+	holder.InputBegan:Connect(function(i)
+		if i.UserInputType == Enum.UserInputType.MouseButton1 then
+			set(not state)
+		end
+	end)
+
+	set(default)
+	return holder
+end
+
+-- SLIDER
+function UILib:AddSlider(parent, text, min, max, default, callback)
+	local holder = Instance.new("Frame", parent)
+	holder.Size = UDim2.new(1,0,0,40)
+	holder.BackgroundColor3 = self.Theme.Section
+	holder.BorderSizePixel = 0
+	Instance.new("UICorner", holder).CornerRadius = UDim.new(0,5)
+
+	local label = Instance.new("TextLabel", holder)
+	label.Text = text .. ": " .. default
+	label.Size = UDim2.new(1,0,0,18)
+	label.TextColor3 = self.Theme.Text
+	label.BackgroundTransparency = 1
+
+	local bar = Instance.new("Frame", holder)
+	bar.Position = UDim2.new(0,8,0,26)
+	bar.Size = UDim2.new(1,-16,0,6)
+	bar.BackgroundColor3 = Color3.fromRGB(80,80,80)
+	Instance.new("UICorner", bar).CornerRadius = UDim.new(1,0)
+
+	local fill = Instance.new("Frame", bar)
+	fill.Size = UDim2.new((default-min)/(max-min),0,1,0)
+	fill.BackgroundColor3 = self.Theme.Accent
+	Instance.new("UICorner", fill).CornerRadius = UDim.new(1,0)
+
+	bar.InputBegan:Connect(function(i)
+		if i.UserInputType == Enum.UserInputType.MouseButton1 then
+			local percent = math.clamp(
+				(i.Position.X - bar.AbsolutePosition.X) / bar.AbsoluteSize.X,
+				0,1
+			)
+			local value = math.floor(min + (max-min)*percent)
+			fill.Size = UDim2.new(percent,0,1,0)
+			label.Text = text .. ": " .. value
+			callback(value)
+		end
+	end)
+
+	return holder
+end
+
+-- THEME
+function UILib:SetTheme(theme)
+	for k,v in pairs(theme) do
+		self.Theme[k] = v
+	end
+end
+
+return UILib
