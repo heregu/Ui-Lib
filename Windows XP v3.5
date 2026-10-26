@@ -1,0 +1,853 @@
+-- Services
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local HttpService = game:GetService("HttpService")
+
+local player = Players.LocalPlayer
+if not player then
+	warn("⚠️ ERROR: Place this script in StarterPlayerScripts or StarterGui as a LocalScript!")
+	return
+end
+
+local playerGui = player:WaitForChild("PlayerGui")
+
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "WinXP_FullSystem"
+screenGui.ResetOnSpawn = false
+screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+screenGui.Parent = playerGui
+
+local taskbar = Instance.new("Frame")
+taskbar.Name = "Taskbar"
+taskbar.Size = UDim2.new(1, 0, 0, 32)
+taskbar.Position = UDim2.new(0, 0, 1, -32)
+taskbar.BackgroundColor3 = Color3.fromRGB(36, 94, 219)
+taskbar.BorderSizePixel = 0
+taskbar.ZIndex = 20
+taskbar.Parent = screenGui
+
+local startBtn = Instance.new("TextButton")
+startBtn.Name = "StartButton"
+startBtn.Size = UDim2.new(0, 95, 1, 0)
+startBtn.BackgroundColor3 = Color3.fromRGB(60, 163, 40)
+startBtn.BorderSizePixel = 0
+startBtn.Font = Enum.Font.SourceSansBold
+startBtn.Text = "  start"
+startBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+startBtn.TextSize = 18
+startBtn.TextXAlignment = Enum.TextXAlignment.Left
+startBtn.ZIndex = 21
+startBtn.Parent = taskbar
+
+local startCorner = Instance.new("UICorner")
+startCorner.CornerRadius = UDim.new(0, 4)
+startCorner.Parent = startBtn
+
+local taskbarAppsFrame = Instance.new("Frame")
+taskbarAppsFrame.Name = "TaskbarApps"
+taskbarAppsFrame.Size = UDim2.new(1, -145, 1, -4)
+taskbarAppsFrame.Position = UDim2.new(0, 102, 0, 2)
+taskbarAppsFrame.BackgroundTransparency = 1
+taskbarAppsFrame.ZIndex = 21
+taskbarAppsFrame.Parent = taskbar
+
+local taskbarLayout = Instance.new("UIListLayout")
+taskbarLayout.FillDirection = Enum.FillDirection.Horizontal
+taskbarLayout.Padding = UDim.new(0, 4)
+taskbarLayout.Parent = taskbarAppsFrame
+
+local function createTBButton(name, text, iconId)
+	local btn = Instance.new("TextButton")
+	btn.Name = name
+	btn.Size = UDim2.new(0, 115, 1, 0)
+	btn.BackgroundColor3 = Color3.fromRGB(50, 120, 240)
+	btn.BorderSizePixel = 0
+	btn.Font = Enum.Font.SourceSansBold
+	btn.Text = "   " .. text
+	btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+	btn.TextSize = 13
+	btn.TextXAlignment = Enum.TextXAlignment.Left
+	btn.ClipsDescendants = true
+	btn.Parent = taskbarAppsFrame
+
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0, 3)
+	corner.Parent = btn
+
+	local icon = Instance.new("ImageLabel")
+	icon.Size = UDim2.new(0, 16, 0, 16)
+	icon.Position = UDim2.new(1, -22, 0.5, -8)
+	icon.BackgroundTransparency = 1
+	icon.Image = iconId
+	icon.ImageColor3 = Color3.fromRGB(255, 255, 255)
+	icon.Parent = btn
+
+	return btn
+end
+
+local tbHomeBtn = createTBButton("TB_Home", "Home", "rbxassetid://10723406988")
+local tbPlayersBtn = createTBButton("TB_Players", "Players", "rbxassetid://10723395457")
+local tbScriptBtn = createTBButton("TB_ScriptBlox", "ScriptBlox", "rbxassetid://10723395041")
+
+local collapseTaskbarBtn = Instance.new("TextButton")
+collapseTaskbarBtn.Name = "CollapseTaskbarBtn"
+collapseTaskbarBtn.Size = UDim2.new(0, 30, 1, 0)
+collapseTaskbarBtn.Position = UDim2.new(1, -32, 0, 0)
+collapseTaskbarBtn.BackgroundColor3 = Color3.fromRGB(25, 75, 175)
+collapseTaskbarBtn.BorderSizePixel = 0
+collapseTaskbarBtn.Font = Enum.Font.SourceSansBold
+collapseTaskbarBtn.Text = "▼"
+collapseTaskbarBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+collapseTaskbarBtn.TextSize = 14
+collapseTaskbarBtn.ZIndex = 22
+collapseTaskbarBtn.Parent = taskbar
+
+local collapseCorner = Instance.new("UICorner")
+collapseCorner.CornerRadius = UDim.new(0, 3)
+collapseCorner.Parent = collapseTaskbarBtn
+
+local expandTaskbarBtn = Instance.new("TextButton")
+expandTaskbarBtn.Name = "ExpandTaskbarBtn"
+expandTaskbarBtn.Size = UDim2.new(0, 36, 0, 24)
+expandTaskbarBtn.Position = UDim2.new(1, -42, 1, -28)
+expandTaskbarBtn.BackgroundColor3 = Color3.fromRGB(36, 94, 219)
+expandTaskbarBtn.BorderSizePixel = 0
+expandTaskbarBtn.Font = Enum.Font.SourceSansBold
+expandTaskbarBtn.Text = "▲"
+expandTaskbarBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+expandTaskbarBtn.TextSize = 14
+expandTaskbarBtn.Visible = false
+expandTaskbarBtn.ZIndex = 25
+expandTaskbarBtn.Parent = screenGui
+
+local expandCorner = Instance.new("UICorner")
+expandCorner.CornerRadius = UDim.new(0, 4)
+expandCorner.Parent = expandTaskbarBtn
+
+local taskbarTweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
+
+collapseTaskbarBtn.Activated:Connect(function()
+	TweenService:Create(taskbar, taskbarTweenInfo, { Position = UDim2.new(0, 0, 1, 0) }):Play()
+	task.delay(0.25, function()
+		expandTaskbarBtn.Visible = true
+	end)
+end)
+
+expandTaskbarBtn.Activated:Connect(function()
+	expandTaskbarBtn.Visible = false
+	TweenService:Create(taskbar, taskbarTweenInfo, { Position = UDim2.new(0, 0, 1, -32) }):Play()
+end)
+
+local windowWidth = 510
+local windowHeight = 380
+
+local mainWindow = Instance.new("Frame")
+mainWindow.Name = "MainWindow"
+mainWindow.Size = UDim2.new(0, windowWidth, 0, windowHeight)
+mainWindow.Position = UDim2.new(0.5, -windowWidth/2, 0.5, -windowHeight/2)
+mainWindow.BackgroundColor3 = Color3.fromRGB(236, 233, 216)
+mainWindow.BorderSizePixel = 0
+mainWindow.ClipsDescendants = true
+mainWindow.Active = true
+mainWindow.Parent = screenGui
+
+local windowStroke = Instance.new("UIStroke")
+windowStroke.Color = Color3.fromRGB(0, 85, 220)
+windowStroke.Thickness = 3
+windowStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+windowStroke.Parent = mainWindow
+
+local windowCorner = Instance.new("UICorner")
+windowCorner.CornerRadius = UDim.new(0, 6)
+windowCorner.Parent = mainWindow
+
+local uiScale = Instance.new("UIScale")
+uiScale.Scale = 0
+uiScale.Parent = mainWindow
+
+local titleBar = Instance.new("Frame")
+titleBar.Name = "TitleBar"
+titleBar.Size = UDim2.new(1, 0, 0, 30)
+titleBar.BackgroundColor3 = Color3.fromRGB(0, 85, 230)
+titleBar.BorderSizePixel = 0
+titleBar.Parent = mainWindow
+
+local titleGradient = Instance.new("UIGradient")
+titleGradient.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 85, 230)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(60, 145, 255))
+})
+titleGradient.Rotation = 90
+titleGradient.Parent = titleBar
+
+local titleText = Instance.new("TextLabel")
+titleText.Name = "TitleText"
+titleText.Size = UDim2.new(1, -70, 1, 0)
+titleText.Position = UDim2.new(0, 10, 0, 0)
+titleText.BackgroundTransparency = 1
+titleText.Text = "System Hub - Home Note"
+titleText.TextColor3 = Color3.fromRGB(255, 255, 255)
+titleText.Font = Enum.Font.SourceSansBold
+titleText.TextSize = 15
+titleText.TextXAlignment = Enum.TextXAlignment.Left
+titleText.Parent = titleBar
+
+local closeBtn = Instance.new("ImageButton")
+closeBtn.Name = "CloseBtn"
+closeBtn.Size = UDim2.new(0, 22, 0, 22)
+closeBtn.Position = UDim2.new(1, -27, 0, 4)
+closeBtn.BackgroundColor3 = Color3.fromRGB(224, 67, 44)
+closeBtn.BorderSizePixel = 0
+closeBtn.AutoButtonColor = false
+closeBtn.Image = "rbxassetid://6031094678"
+closeBtn.ImageColor3 = Color3.fromRGB(255, 255, 255)
+closeBtn.ScaleType = Enum.ScaleType.Fit
+closeBtn.Parent = titleBar
+
+local closeCorner = Instance.new("UICorner")
+closeCorner.CornerRadius = UDim.new(0, 3)
+closeCorner.Parent = closeBtn
+
+local minBtn = Instance.new("TextButton")
+minBtn.Name = "MinBtn"
+minBtn.Size = UDim2.new(0, 22, 0, 22)
+minBtn.Position = UDim2.new(1, -54, 0, 4)
+minBtn.BackgroundColor3 = Color3.fromRGB(43, 115, 228)
+minBtn.BorderSizePixel = 0
+minBtn.AutoButtonColor = false
+minBtn.Font = Enum.Font.SourceSansBold
+minBtn.Text = "―"
+minBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+minBtn.TextSize = 12
+minBtn.Parent = titleBar
+
+local minCorner = Instance.new("UICorner")
+minCorner.CornerRadius = UDim.new(0, 3)
+minCorner.Parent = minBtn
+
+local homeNotePage = Instance.new("Frame")
+homeNotePage.Name = "HomeNotePage"
+homeNotePage.Size = UDim2.new(1, -12, 1, -42)
+homeNotePage.Position = UDim2.new(0, 6, 0, 36)
+homeNotePage.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+homeNotePage.BorderSizePixel = 0
+homeNotePage.Visible = true
+homeNotePage.Parent = mainWindow
+
+local noteBox = Instance.new("TextBox")
+noteBox.Size = UDim2.new(1, -16, 1, -16)
+noteBox.Position = UDim2.new(0, 8, 0, 8)
+noteBox.BackgroundTransparency = 1
+noteBox.MultiLine = true
+noteBox.TextWrapped = true
+noteBox.Font = Enum.Font.SourceSans
+noteBox.TextSize = 14
+noteBox.TextColor3 = Color3.fromRGB(20, 20, 20)
+noteBox.TextXAlignment = Enum.TextXAlignment.Left
+noteBox.TextYAlignment = Enum.TextYAlignment.Top
+noteBox.Text = "=== Windows XP Notepad ===\n\n• Type notes here!\n• Use the taskbar icons to switch apps or collapse the taskbar."
+noteBox.Parent = homeNotePage
+
+local playersPage = Instance.new("Frame")
+playersPage.Name = "PlayersPage"
+playersPage.Size = UDim2.new(1, -12, 1, -42)
+playersPage.Position = UDim2.new(0, 6, 0, 36)
+playersPage.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+playersPage.BorderSizePixel = 0
+playersPage.Visible = false
+playersPage.Parent = mainWindow
+
+local serverCountBar = Instance.new("Frame")
+serverCountBar.Size = UDim2.new(1, 0, 0, 24)
+serverCountBar.BackgroundColor3 = Color3.fromRGB(245, 243, 235)
+serverCountBar.BorderSizePixel = 0
+serverCountBar.Parent = playersPage
+
+local countLabel = Instance.new("TextLabel")
+countLabel.Size = UDim2.new(1, -16, 1, 0)
+countLabel.Position = UDim2.new(0, 8, 0, 0)
+countLabel.BackgroundTransparency = 1
+countLabel.Font = Enum.Font.SourceSansBold
+countLabel.TextSize = 13
+countLabel.TextColor3 = Color3.fromRGB(30, 80, 180)
+countLabel.TextXAlignment = Enum.TextXAlignment.Left
+countLabel.Text = "Server Players: 1"
+countLabel.Parent = serverCountBar
+
+local scrollList = Instance.new("ScrollingFrame")
+scrollList.Name = "PlayerList"
+scrollList.Size = UDim2.new(1, 0, 1, -24)
+scrollList.Position = UDim2.new(0, 0, 0, 24)
+scrollList.BackgroundTransparency = 1
+scrollList.BorderSizePixel = 0
+scrollList.ScrollBarThickness = 8
+scrollList.ScrollBarImageColor3 = Color3.fromRGB(0, 85, 230)
+scrollList.AutomaticCanvasSize = Enum.AutomaticSize.Y
+scrollList.CanvasSize = UDim2.new(0, 0, 0, 0)
+scrollList.Parent = playersPage
+
+local listLayout = Instance.new("UIListLayout")
+listLayout.Padding = UDim.new(0, 6)
+listLayout.Parent = scrollList
+
+local listPadding = Instance.new("UIPadding")
+listPadding.PaddingTop = UDim.new(0, 6)
+listPadding.PaddingBottom = UDim.new(0, 6)
+listPadding.PaddingLeft = UDim.new(0, 6)
+listPadding.PaddingRight = UDim.new(0, 6)
+listPadding.Parent = scrollList
+
+local scriptBloxPage = Instance.new("Frame")
+scriptBloxPage.Name = "ScriptBloxPage"
+scriptBloxPage.Size = UDim2.new(1, -12, 1, -42)
+scriptBloxPage.Position = UDim2.new(0, 6, 0, 36)
+scriptBloxPage.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+scriptBloxPage.BorderSizePixel = 0
+scriptBloxPage.Visible = false
+scriptBloxPage.Parent = mainWindow
+
+local searchBarTop = Instance.new("Frame")
+searchBarTop.Size = UDim2.new(1, 0, 0, 42)
+searchBarTop.BackgroundColor3 = Color3.fromRGB(245, 243, 235)
+searchBarTop.BorderSizePixel = 0
+searchBarTop.Parent = scriptBloxPage
+
+local searchBox = Instance.new("TextBox")
+searchBox.Size = UDim2.new(1, -190, 0, 26)
+searchBox.Position = UDim2.new(0, 6, 0, 8)
+searchBox.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+searchBox.BorderSizePixel = 0
+searchBox.Font = Enum.Font.SourceSans
+searchBox.TextSize = 14
+searchBox.TextColor3 = Color3.fromRGB(30, 30, 30)
+searchBox.PlaceholderText = "Search scripts..."
+searchBox.Text = ""
+searchBox.Parent = searchBarTop
+
+local searchBoxCorner = Instance.new("UICorner")
+searchBoxCorner.CornerRadius = UDim.new(0, 4)
+searchBoxCorner.Parent = searchBox
+
+local searchBoxStroke = Instance.new("UIStroke")
+searchBoxStroke.Color = Color3.fromRGB(180, 180, 180)
+searchBoxStroke.Thickness = 1
+searchBoxStroke.Parent = searchBox
+
+local currentSortMode = "default"
+local sortBtn = Instance.new("TextButton")
+sortBtn.Size = UDim2.new(0, 105, 0, 26)
+sortBtn.Position = UDim2.new(1, -178, 0, 8)
+sortBtn.BackgroundColor3 = Color3.fromRGB(230, 230, 230)
+sortBtn.BorderSizePixel = 0
+sortBtn.Font = Enum.Font.SourceSansBold
+sortBtn.Text = "📁 Default ▼"
+sortBtn.TextColor3 = Color3.fromRGB(40, 40, 40)
+sortBtn.TextSize = 12
+sortBtn.Parent = searchBarTop
+
+local sortCorner = Instance.new("UICorner")
+sortCorner.CornerRadius = UDim.new(0, 4)
+sortCorner.Parent = sortBtn
+
+local sortStroke = Instance.new("UIStroke")
+sortStroke.Color = Color3.fromRGB(180, 180, 180)
+sortStroke.Thickness = 1
+sortStroke.Parent = sortBtn
+
+local searchBtn = Instance.new("TextButton")
+searchBtn.Size = UDim2.new(0, 60, 0, 26)
+searchBtn.Position = UDim2.new(1, -66, 0, 8)
+searchBtn.BackgroundColor3 = Color3.fromRGB(0, 85, 230)
+searchBtn.BorderSizePixel = 0
+searchBtn.Font = Enum.Font.SourceSansBold
+searchBtn.Text = "Search"
+searchBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+searchBtn.TextSize = 13
+searchBtn.Parent = searchBarTop
+
+local searchBtnCorner = Instance.new("UICorner")
+searchBtnCorner.CornerRadius = UDim.new(0, 4)
+searchBtnCorner.Parent = searchBtn
+
+local sortDropdown = Instance.new("Frame")
+sortDropdown.Size = UDim2.new(0, 115, 0, 125)
+sortDropdown.Position = UDim2.new(1, -178, 0, 36)
+sortDropdown.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+sortDropdown.BorderSizePixel = 0
+sortDropdown.ZIndex = 30
+sortDropdown.Visible = false
+sortDropdown.Parent = scriptBloxPage
+
+local dropdownStroke = Instance.new("UIStroke")
+dropdownStroke.Color = Color3.fromRGB(160, 160, 160)
+dropdownStroke.Thickness = 1
+dropdownStroke.Parent = sortDropdown
+
+local dropdownCorner = Instance.new("UICorner")
+dropdownCorner.CornerRadius = UDim.new(0, 4)
+dropdownCorner.Parent = sortDropdown
+
+local dropdownLayout = Instance.new("UIListLayout")
+dropdownLayout.Parent = sortDropdown
+
+local function createSortOption(modeKey, text)
+	local optBtn = Instance.new("TextButton")
+	optBtn.Size = UDim2.new(1, 0, 0, 25)
+	optBtn.BackgroundTransparency = 1
+	optBtn.Font = Enum.Font.SourceSans
+	optBtn.Text = "  " .. text
+	optBtn.TextColor3 = Color3.fromRGB(30, 30, 30)
+	optBtn.TextSize = 12
+	optBtn.TextXAlignment = Enum.TextXAlignment.Left
+	optBtn.ZIndex = 31
+	optBtn.Parent = sortDropdown
+
+	optBtn.MouseEnter:Connect(function()
+		optBtn.BackgroundTransparency = 0
+		optBtn.BackgroundColor3 = Color3.fromRGB(0, 85, 230)
+		optBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+	end)
+
+	optBtn.MouseLeave:Connect(function()
+		optBtn.BackgroundTransparency = 1
+		optBtn.TextColor3 = Color3.fromRGB(30, 30, 30)
+	end)
+
+	optBtn.Activated:Connect(function()
+		currentSortMode = modeKey
+		sortBtn.Text = text .. " ▼"
+		sortDropdown.Visible = false
+	end)
+end
+
+createSortOption("default", "📁 Default")
+createSortOption("views", "👁️ Views")
+createSortOption("likes", "👍 Most Likes")
+createSortOption("dislikes", "👎 Dislikes")
+createSortOption("free", "🔓 Free Only")
+
+sortBtn.Activated:Connect(function()
+	sortDropdown.Visible = not sortDropdown.Visible
+end)
+
+local scriptScrollList = Instance.new("ScrollingFrame")
+scriptScrollList.Name = "ScriptList"
+scriptScrollList.Size = UDim2.new(1, 0, 1, -42)
+scriptScrollList.Position = UDim2.new(0, 0, 0, 42)
+scriptScrollList.BackgroundTransparency = 1
+scriptScrollList.BorderSizePixel = 0
+scriptScrollList.ScrollBarThickness = 8
+scriptScrollList.ScrollBarImageColor3 = Color3.fromRGB(0, 85, 230)
+scriptScrollList.AutomaticCanvasSize = Enum.AutomaticSize.Y
+scriptScrollList.CanvasSize = UDim2.new(0, 0, 0, 0)
+scriptScrollList.Parent = scriptBloxPage
+
+local scriptListLayout = Instance.new("UIListLayout")
+scriptListLayout.Padding = UDim.new(0, 6)
+scriptListLayout.Parent = scriptScrollList
+
+local scriptListPadding = Instance.new("UIPadding")
+scriptListPadding.PaddingTop = UDim.new(0, 6)
+scriptListPadding.PaddingBottom = UDim.new(0, 6)
+scriptListPadding.PaddingLeft = UDim.new(0, 6)
+scriptListPadding.PaddingRight = UDim.new(0, 6)
+scriptListPadding.Parent = scriptScrollList
+
+local function addScriptCard(scriptObj)
+	pcall(function()
+		local card = Instance.new("Frame")
+		card.Size = UDim2.new(1, -6, 0, 72)
+		card.BackgroundColor3 = Color3.fromRGB(248, 248, 248)
+		card.BorderSizePixel = 0
+		card.Parent = scriptScrollList
+
+		local cStroke = Instance.new("UIStroke")
+		cStroke.Color = Color3.fromRGB(220, 220, 220)
+		cStroke.Thickness = 1
+		cStroke.Parent = card
+
+		local cCorner = Instance.new("UICorner")
+		cCorner.CornerRadius = UDim.new(0, 4)
+		cCorner.Parent = card
+
+		local titleLbl = Instance.new("TextLabel")
+		titleLbl.Size = UDim2.new(1, -100, 0, 18)
+		titleLbl.Position = UDim2.new(0, 10, 0, 6)
+		titleLbl.BackgroundTransparency = 1
+		titleLbl.Font = Enum.Font.SourceSansBold
+		titleLbl.TextSize = 14
+		titleLbl.TextColor3 = Color3.fromRGB(20, 20, 20)
+		titleLbl.TextXAlignment = Enum.TextXAlignment.Left
+		titleLbl.Text = scriptObj.title or "Untitled Script"
+		titleLbl.Parent = card
+
+		local gameLbl = Instance.new("TextLabel")
+		gameLbl.Size = UDim2.new(1, -100, 0, 15)
+		gameLbl.Position = UDim2.new(0, 10, 0, 24)
+		gameLbl.BackgroundTransparency = 1
+		gameLbl.Font = Enum.Font.SourceSans
+		gameLbl.TextSize = 12
+		gameLbl.TextColor3 = Color3.fromRGB(100, 100, 100)
+		gameLbl.TextXAlignment = Enum.TextXAlignment.Left
+		gameLbl.Text = "🎮 " .. (scriptObj.game and scriptObj.game.name or "Universal")
+		gameLbl.Parent = card
+
+		local views = scriptObj.views or 0
+		local likes = scriptObj.likeCount or scriptObj.likes or 0
+		local dislikes = scriptObj.dislikeCount or scriptObj.dislikes or 0
+
+		local statsLbl = Instance.new("TextLabel")
+		statsLbl.Size = UDim2.new(1, -100, 0, 15)
+		statsLbl.Position = UDim2.new(0, 10, 0, 42)
+		statsLbl.BackgroundTransparency = 1
+		statsLbl.Font = Enum.Font.SourceSansMedium
+		statsLbl.TextSize = 11
+		statsLbl.TextColor3 = Color3.fromRGB(70, 70, 70)
+		statsLbl.TextXAlignment = Enum.TextXAlignment.Left
+		statsLbl.Text = string.format("👁️ %d  |  👍 %d  |  👎 %d", views, likes, dislikes)
+		statsLbl.Parent = card
+
+		local execBtn = Instance.new("TextButton")
+		execBtn.Size = UDim2.new(0, 75, 0, 22)
+		execBtn.Position = UDim2.new(1, -83, 0, 11)
+		execBtn.BackgroundColor3 = Color3.fromRGB(60, 163, 40)
+		execBtn.BorderSizePixel = 0
+		execBtn.Font = Enum.Font.SourceSansBold
+		execBtn.Text = "Execute"
+		execBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+		execBtn.TextSize = 12
+		execBtn.Parent = card
+
+		local execCorner = Instance.new("UICorner")
+		execCorner.CornerRadius = UDim.new(0, 4)
+		execCorner.Parent = execBtn
+
+		execBtn.Activated:Connect(function()
+			if scriptObj.slug then
+				execBtn.Text = "Loading..."
+				task.spawn(function()
+					local rawUrl = "https://scriptblox.com/api/script/raw/" .. scriptObj.slug
+					local success, code = pcall(function()
+						return game:HttpGet(rawUrl)
+					end)
+					if success and code then
+						execBtn.Text = "Ran!"
+						pcall(function()
+							loadstring(code)()
+						end)
+					else
+						execBtn.Text = "Failed"
+					end
+					task.wait(1.5)
+					execBtn.Text = "Execute"
+				end)
+			end
+		end)
+
+		local copyBtn = Instance.new("TextButton")
+		copyBtn.Size = UDim2.new(0, 75, 0, 22)
+		copyBtn.Position = UDim2.new(1, -83, 0, 38)
+		copyBtn.BackgroundColor3 = Color3.fromRGB(0, 115, 230)
+		copyBtn.BorderSizePixel = 0
+		copyBtn.Font = Enum.Font.SourceSansBold
+		copyBtn.Text = "Copy Code"
+		copyBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+		copyBtn.TextSize = 11
+		copyBtn.Parent = card
+
+		local copyCorner = Instance.new("UICorner")
+		copyCorner.CornerRadius = UDim.new(0, 4)
+		copyCorner.Parent = copyBtn
+
+		copyBtn.Activated:Connect(function()
+			if scriptObj.slug then
+				copyBtn.Text = "Loading..."
+				task.spawn(function()
+					local rawUrl = "https://scriptblox.com/api/script/raw/" .. scriptObj.slug
+					local success, code = pcall(function()
+						return game:HttpGet(rawUrl)
+					end)
+					if success and code then
+						copyBtn.Text = "Copied!"
+						pcall(function()
+							setclipboard(code)
+						end)
+					else
+						copyBtn.Text = "Failed"
+					end
+					task.wait(1.5)
+					copyBtn.Text = "Copy Code"
+				end)
+			end
+		end)
+	end)
+end
+
+local function fetchAndSortScripts(query)
+	for _, child in ipairs(scriptScrollList:GetChildren()) do
+		if child:IsA("Frame") or child:IsA("TextLabel") then
+			child:Destroy()
+		end
+	end
+
+	local encoded = HttpService:UrlEncode(query)
+	local url = "https://scriptblox.com/api/script/search?q=" .. encoded .. "&page=1"
+	if currentSortMode == "free" then
+		url = url .. "&mode=free"
+	end
+
+	local success, response = pcall(function()
+		return game:HttpGet(url)
+	end)
+
+	if success then
+		local data = HttpService:JSONDecode(response)
+		if data and data.result and data.result.scripts then
+			local scripts = data.result.scripts
+
+			if currentSortMode == "views" then
+				table.sort(scripts, function(a, b)
+					return (a.views or 0) > (b.views or 0)
+				end)
+			elseif currentSortMode == "likes" then
+				table.sort(scripts, function(a, b)
+					return (a.likeCount or a.likes or 0) > (b.likeCount or b.likes or 0)
+				end)
+			elseif currentSortMode == "dislikes" then
+				table.sort(scripts, function(a, b)
+					return (a.dislikeCount or a.dislikes or 0) < (b.dislikeCount or b.dislikes or 0)
+				end)
+			end
+
+			if #scripts > 0 then
+				for _, sObj in ipairs(scripts) do
+					addScriptCard(sObj)
+				end
+			else
+				local emptyLbl = Instance.new("TextLabel")
+				emptyLbl.Size = UDim2.new(1, 0, 0, 40)
+				emptyLbl.BackgroundTransparency = 1
+				emptyLbl.Font = Enum.Font.SourceSans
+				emptyLbl.TextSize = 14
+				emptyLbl.TextColor3 = Color3.fromRGB(150, 150, 150)
+				emptyLbl.Text = "No scripts found for: " .. query
+				emptyLbl.Parent = scriptScrollList
+			end
+		end
+	end
+end
+
+searchBtn.Activated:Connect(function()
+	if searchBox.Text ~= "" then
+		fetchAndSortScripts(searchBox.Text)
+	end
+end)
+
+searchBox.FocusLost:Connect(function(enterPressed)
+	if enterPressed and searchBox.Text ~= "" then
+		fetchAndSortScripts(searchBox.Text)
+	end
+end)
+
+local function getDevice(p)
+	if p == player then
+		if UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled then
+			return "📱 Mobile"
+		elseif UserInputService.GamepadEnabled and not UserInputService.KeyboardEnabled then
+			return "🎮 Console"
+		else
+			return "💻 PC"
+		end
+	end
+	return "👤 Player"
+end
+
+local function addPlayerCard(targetPlayer)
+	pcall(function()
+		local card = Instance.new("Frame")
+		card.Size = UDim2.new(1, -6, 0, 68)
+		card.BackgroundColor3 = Color3.fromRGB(248, 248, 248)
+		card.BorderSizePixel = 0
+		card.Parent = scrollList
+
+		local cStroke = Instance.new("UIStroke")
+		cStroke.Color = Color3.fromRGB(220, 220, 220)
+		cStroke.Thickness = 1
+		cStroke.Parent = card
+
+		local cCorner = Instance.new("UICorner")
+		cCorner.CornerRadius = UDim.new(0, 4)
+		cCorner.Parent = card
+
+		local pfp = Instance.new("ImageLabel")
+		pfp.Size = UDim2.new(0, 52, 0, 52)
+		pfp.Position = UDim2.new(0, 8, 0, 8)
+		pfp.BackgroundColor3 = Color3.fromRGB(230, 230, 230)
+		pfp.BorderSizePixel = 0
+		pfp.Image = "rbxthumb://type=AvatarHeadShot&id=" .. targetPlayer.UserId .. "&w=100&h=100"
+		pfp.Parent = card
+
+		local pfpCorner = Instance.new("UICorner")
+		pfpCorner.CornerRadius = UDim.new(0, 6)
+		pfpCorner.Parent = pfp
+
+		local nameLabel = Instance.new("TextLabel")
+		nameLabel.Size = UDim2.new(1, -72, 0, 18)
+		nameLabel.Position = UDim2.new(0, 68, 0, 6)
+		nameLabel.BackgroundTransparency = 1
+		nameLabel.Font = Enum.Font.SourceSansBold
+		nameLabel.TextSize = 15
+		nameLabel.TextColor3 = Color3.fromRGB(20, 20, 20)
+		nameLabel.TextXAlignment = Enum.TextXAlignment.Left
+		nameLabel.Text = targetPlayer.DisplayName .. " (@" .. targetPlayer.Name .. ")"
+		nameLabel.Parent = card
+
+		local joinTime = os.time() - (targetPlayer.AccountAge * 86400)
+		local dateStr = os.date("%B %d, %Y", joinTime)
+
+		local joinLabel = Instance.new("TextLabel")
+		joinLabel.Size = UDim2.new(1, -72, 0, 15)
+		joinLabel.Position = UDim2.new(0, 68, 0, 26)
+		joinLabel.BackgroundTransparency = 1
+		joinLabel.Font = Enum.Font.SourceSans
+		joinLabel.TextSize = 13
+		joinLabel.TextColor3 = Color3.fromRGB(100, 100, 100)
+		joinLabel.TextXAlignment = Enum.TextXAlignment.Left
+		joinLabel.Text = "📅 Joined: " .. dateStr
+		joinLabel.Parent = card
+
+		local devLabel = Instance.new("TextLabel")
+		devLabel.Size = UDim2.new(1, -72, 0, 15)
+		devLabel.Position = UDim2.new(0, 68, 0, 44)
+		devLabel.BackgroundTransparency = 1
+		devLabel.Font = Enum.Font.SourceSansMedium
+		devLabel.TextSize = 12
+		devLabel.TextColor3 = Color3.fromRGB(0, 100, 210)
+		devLabel.TextXAlignment = Enum.TextXAlignment.Left
+		devLabel.Text = "Device: " .. getDevice(targetPlayer)
+		devLabel.Parent = card
+	end)
+end
+
+local function refreshPlayerList()
+	local all = Players:GetPlayers()
+	countLabel.Text = "Server Players: " .. #all
+
+	for _, child in ipairs(scrollList:GetChildren()) do
+		if child:IsA("Frame") then
+			child:Destroy()
+		end
+	end
+
+	for _, p in ipairs(all) do
+		addPlayerCard(p)
+	end
+end
+
+Players.PlayerAdded:Connect(refreshPlayerList)
+Players.PlayerRemoving:Connect(refreshPlayerList)
+refreshPlayerList()
+
+local openTweenInfo = TweenInfo.new(0.35, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+local closeTweenInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+local rollTweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
+
+local function switchApp(appIndex)
+	homeNotePage.Visible = (appIndex == 1)
+	playersPage.Visible = (appIndex == 2)
+	scriptBloxPage.Visible = (appIndex == 3)
+
+	local titles = {
+		"System Hub - Home Note",
+		"System Hub - Players Directory",
+		"System Hub - ScriptBlox Browser"
+	}
+	titleText.Text = titles[appIndex]
+
+	local buttons = {tbHomeBtn, tbPlayersBtn, tbScriptBtn}
+	for i, btn in ipairs(buttons) do
+		if i == appIndex then
+			btn.BackgroundColor3 = Color3.fromRGB(25, 75, 175)
+		else
+			btn.BackgroundColor3 = Color3.fromRGB(50, 120, 240)
+		end
+	end
+
+	if not mainWindow.Visible or uiScale.Scale == 0 then
+		mainWindow.Visible = true
+		uiScale.Scale = 0
+		TweenService:Create(uiScale, openTweenInfo, { Scale = 1 }):Play()
+	end
+end
+
+tbHomeBtn.Activated:Connect(function() switchApp(1) end)
+tbPlayersBtn.Activated:Connect(function() switchApp(2) end)
+tbScriptBtn.Activated:Connect(function() switchApp(3) end)
+
+TweenService:Create(uiScale, openTweenInfo, { Scale = 1 }):Play()
+
+closeBtn.MouseEnter:Connect(function() closeBtn.BackgroundColor3 = Color3.fromRGB(255, 95, 75) end)
+closeBtn.MouseLeave:Connect(function() closeBtn.BackgroundColor3 = Color3.fromRGB(224, 67, 44) end)
+
+minBtn.MouseEnter:Connect(function() minBtn.BackgroundColor3 = Color3.fromRGB(75, 145, 255) end)
+minBtn.MouseLeave:Connect(function() minBtn.BackgroundColor3 = Color3.fromRGB(43, 115, 228) end)
+
+closeBtn.Activated:Connect(function()
+	local closeTw = TweenService:Create(uiScale, closeTweenInfo, { Scale = 0 })
+	closeTw:Play()
+	closeTw.Completed:Connect(function()
+		mainWindow.Visible = false
+	end)
+end)
+
+startBtn.Activated:Connect(function()
+	if not mainWindow.Visible or uiScale.Scale == 0 then
+		mainWindow.Visible = true
+		uiScale.Scale = 0
+		TweenService:Create(uiScale, openTweenInfo, { Scale = 1 }):Play()
+	else
+		local closeTw = TweenService:Create(uiScale, closeTweenInfo, { Scale = 0 })
+		closeTw:Play()
+		closeTw.Completed:Connect(function()
+			mainWindow.Visible = false
+		end)
+	end
+end)
+
+local isMinimized = false
+minBtn.Activated:Connect(function()
+	isMinimized = not isMinimized
+	local targetHeight = isMinimized and 30 or windowHeight
+	TweenService:Create(mainWindow, rollTweenInfo, { Size = UDim2.new(0, windowWidth, 0, targetHeight) }):Play()
+end)
+
+local isDragging = false
+local dragStartPos = nil
+local frameStartPos = nil
+
+titleBar.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+		isDragging = true
+		dragStartPos = input.Position
+		frameStartPos = mainWindow.Position
+	end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+		isDragging = false
+	end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+	if isDragging and dragStartPos and frameStartPos and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+		local delta = input.Position - dragStartPos
+		mainWindow.Position = UDim2.new(
+			frameStartPos.X.Scale,
+			frameStartPos.X.Offset + delta.X,
+			frameStartPos.Y.Scale,
+			frameStartPos.Y.Offset + delta.Y
+		)
+	end
+end)
